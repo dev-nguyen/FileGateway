@@ -41,6 +41,9 @@ ScaffoldingReadMe.txt
 *~
 CodeCoverage/
 
+# Thư mục chứa cấu hình người dùng cục bộ của VS
+.vs/
+
 # MSBuild Binary and Structured Log
 *.binlog
 
