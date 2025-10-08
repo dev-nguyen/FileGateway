@@ -1,4 +1,6 @@
 
+using FileGateway.Api.Middleware;
+
 namespace FileGateway.Api
 {
     public class Program
@@ -7,12 +9,7 @@ namespace FileGateway.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddApiDependencies(builder.Host, builder.Configuration);
 
             var app = builder.Build();
 
@@ -22,11 +19,11 @@ namespace FileGateway.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
+            app.UseMiddleware<SecurityStampValidatorMiddleware>();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
