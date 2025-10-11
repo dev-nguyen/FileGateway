@@ -9,10 +9,16 @@ public class UnitOfWork : IUnitOfWork
     private readonly AppDbContext _context;
 
     private IUserRepository? _userRepository;
+    private ISecretRepository? _secretRepository;
 
     public IUserRepository User
     {
         get { return _userRepository ??= new UserRepository(_context); }
+    }
+
+    public ISecretRepository Secret
+    {
+        get { return _secretRepository ??= new SecretRepository(_context); }
     }
 
     public UnitOfWork(AppDbContext context)
@@ -41,5 +47,20 @@ public class UnitOfWork : IUnitOfWork
     {
         Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    public async Task TransactionExecuteAsync(Func<Task> action, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await action();
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 }

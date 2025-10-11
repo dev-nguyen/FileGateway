@@ -16,10 +16,11 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApiDependencies(this IServiceCollection services, IHostBuilder host, IConfiguration configuration)
     {
         services.BindJwtSettings(configuration);
+        var awsSettings = services.BindS3Settings(configuration);
         services.AddApiServices(configuration);
 
         services.AddApplicationDependencies();
-        services.AddInfrastructureDependencies(GetConnection(configuration));
+        services.AddInfrastructureDependencies(GetConnection(configuration), awsSettings);
 
         Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(configuration)
@@ -35,6 +36,15 @@ public static class ServiceCollectionExtensions
         configuration.GetSection("JwtSettings").Bind(jwtSettings);
         services.AddSingleton(jwtSettings);
         return services;
+    }
+
+    private static AwsSettings BindS3Settings(this IServiceCollection services, IConfiguration configuration)
+    {
+        var awsSettings = new AwsSettings();
+        configuration.GetSection("AwsSettings").Bind(awsSettings);
+        services.AddSingleton(awsSettings);
+
+        return awsSettings;
     }
 
     private static IServiceCollection AddSecuritySwagger(this IServiceCollection services)

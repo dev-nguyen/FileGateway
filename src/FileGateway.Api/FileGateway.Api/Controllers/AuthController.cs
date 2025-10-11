@@ -33,7 +33,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-            apiResult.Message = ex.Message;
+            apiResult.ErrorMessage = ex.Message;
         }
         return Ok(apiResult);
     }
@@ -46,12 +46,12 @@ public class AuthController : ControllerBase
         {
             await _mediator.Send(request);
             apiResult.Success = true;
-            apiResult.Message = $"{request.Email} is created successfully.";
+            apiResult.Data = $"{request.Email} is created successfully.";
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-            apiResult.Message = ex.Message;
+            apiResult.ErrorMessage = ex.Message;
         }
         return Ok(apiResult);
     }
@@ -65,12 +65,12 @@ public class AuthController : ControllerBase
         {
             await _mediator.Send(request);
             apiResult.Success = true;
-            apiResult.Message = $"Password is changed successfully.";
+            apiResult.Data = $"Password is changed successfully.";
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-            apiResult.Message = ex.Message;
+            apiResult.ErrorMessage = ex.Message;
         }
         return Ok(apiResult);
     }
