@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\FileGateway.Domain\FileGateway.Domain\FileGateway.Domain.csproj" />
+    <ProjectReference Include="..\..\Domain\FileGateway.Domain\FileGateway.Domain.csproj" />
   </ItemGroup>
 
 </Project>
