@@ -17,16 +17,19 @@ public class FileSecretService : IFileSecretService
     private readonly IFileStorageServiceFactory _storageServiceFactory;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISecretRepository _secretRepository;
-
+    private readonly IServiceProvider _serviceProvider;
     private const string UploadFolder = "Uploads";
 
-    public FileSecretService(ILogger<FileSecretService> logger, IFileStorageServiceFactory storageServiceFactory, IUnitOfWork unitOfWork)
+    public FileSecretService(ILogger<FileSecretService> logger, IFileStorageServiceFactory storageServiceFactory, IUnitOfWork unitOfWork,
+        IServiceProvider serviceProvider)
     {
         _logger = Ensure.IsNotNull(logger);
 
         _storageServiceFactory = Ensure.IsNotNull(storageServiceFactory);
         _unitOfWork = Ensure.IsNotNull(unitOfWork);
         _secretRepository = Ensure.IsNotNull(_unitOfWork.Secret);
+
+        _serviceProvider = Ensure.IsNotNull(serviceProvider);
     }
 
     public async Task<string> CreateAsync(CreateFileSecretCommand args, CancellationToken cancellationToken = default)
@@ -75,45 +78,26 @@ public class FileSecretService : IFileSecretService
         }
         if (secretFile.DeleteAfterDownload)
         {
-            await ChangeStatusAsync(secretFile, FileStatus.InProcess, cancellationToken);
+            await MarkSecretToInProcess(secretFile, cancellationToken);
         }
-
 
         var uploadPath = Path.Combine(args.AbsolutePath, secretFile.StoragePath);
         var storageService = _storageServiceFactory.Create(args.StorageProvider);
         var streamFile = await storageService.GetFileAsync(uploadPath, cancellationToken);
 
-        var trackingStream = new TrackingStream(streamFile, async () =>
-        {
-            //Download completed
-            if (secretFile.DeleteAfterDownload)
-            {
-                await ChangeStatusAsync(secretFile, FileStatus.Removed, cancellationToken);
-                await storageService.DeleteFileAsync(uploadPath, cancellationToken);
-
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    _logger.LogDebug("Deleted file after download. Token: {Token}", args.Token);
-                }
-            }
-        });
-        return new FileDownloadResult(trackingStream, secretFile.ContentType);
+        return new FileDownloadResult(streamFile, secretFile);
     }
 
-    private async Task ChangeStatusAsync(Secret secretFile, FileStatus status, CancellationToken cancellationToken)
+    private async Task MarkSecretToInProcess(Secret secretFile, CancellationToken cancellationToken)
     {
-        switch (status)
-        {
-            case FileStatus.InProcess:
-                secretFile.MarkInProcess();
-                break;
-            case FileStatus.Removed:
-                secretFile.MarkRemoved();
-                break;
-        }
-
+        secretFile.MarkInProcess();
         await _secretRepository.UpdateAsync(secretFile.Id, secretFile, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("Update secret file status to InProcess. FileName: {Filename}", secretFile.FileName);
+        }
     }
 
     private async Task<Secret> ValidAndCreateSecretInfoAsync(CreateFileSecretCommand args, CancellationToken cancellationToken)

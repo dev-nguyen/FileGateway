@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: filegateway_db
+    environment:
+      SA_PASSWORD: "Admin@123"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    ports:
+      - "14333:1433"
+    volumes:
+      - filegateway_db_data:/var/opt/mssql
+    healthcheck:
+      test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Admin@123", "-Q", "SELECT 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./src
+      dockerfile: Api/FileGateway.Api/Dockerfile
+    container_name: filegateway_api
+    depends_on:
+     - db
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ConnectionStrings__DefaultConnection: "Server=db;Database=FileGatewayDb;User Id=sa;Password=Admin@123;TrustServerCertificate=True;"
+      JwtSettings__Key: "g7+J/2Wk9XpQyFhZtHlVw0oM8rN4u6c/1tYx5bV2O7k="
+      JwtSettings__Issuer: "FileGatewayAPI"
+      JwtSettings__Audience: "web-app-client"
+      JwtSettings__ExpiresInMinutes: "120"
+      
+      AwsSettings__Region: ap-southeast-1
+      AwsSettings__AccessKey: your-access-key
+      AwsSettings__SecretKey: your-secret-key
+      
+    ports:
+      - "5000:8080"
+    volumes:
+      - ./src/FileGateway.Api/FileGateway.Api/Uploads:/app/Uploads
+    restart: unless-stopped
+
+volumes:
+  filegateway_db_data:

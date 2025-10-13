@@ -1,8 +1,11 @@
 ﻿using Asp.Versioning;
 using FileGateway.Application;
+using FileGateway.Application.Abstractions;
 using FileGateway.Application.Commands;
+using FileGateway.Application.DTOs;
 using FileGateway.Application.Queries;
 using FileGateway.Domain;
+using FileGateway.Domain.Abstractions;
 using FileGateway.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -21,13 +24,16 @@ public class FileSecretController : ControllerBase
     private readonly ILogger<FileSecretController> _logger;
     private readonly IMediator _mediator;
     private readonly IWebHostEnvironment _env;
+    private readonly IServiceProvider _rootProvider;
 
-    public FileSecretController(ILogger<FileSecretController> logger, IMediator mediator, IWebHostEnvironment env)
+    public FileSecretController(ILogger<FileSecretController> logger, IMediator mediator, IWebHostEnvironment env,
+        IServiceProvider rootProvider)
     {
         _logger = Ensure.IsNotNull(logger);
 
         _mediator = Ensure.IsNotNull(mediator);
         _env = Ensure.IsNotNull(env);
+        _rootProvider = Ensure.IsNotNull(rootProvider);
     }
 
     [HttpPost("upload/local")]
@@ -49,13 +55,13 @@ public class FileSecretController : ControllerBase
         {
             var token = await _mediator.Send(request);
             apiResult.Success = true;
-            apiResult.Data = token;
+            apiResult.Data = Url.Action(nameof(DownloadLocal), "FileSecret", new { token, version = "1.0" }, Request.Scheme);
             apiResult.ErrorMessage = string.IsNullOrWhiteSpace(token) ? $"Failed to upload {file.FileName}." : string.Empty;
         }
         catch (Exception ex)
         {
             apiResult.ErrorMessage = ex.Message;
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to upload file on local.");
         }
 
         return Ok(apiResult);
@@ -81,13 +87,13 @@ public class FileSecretController : ControllerBase
         {
             var token = await _mediator.Send(request);
             apiResult.Success = true;
-            apiResult.Data = token;
+            apiResult.Data = apiResult.Data = Url.Action(nameof(DownloadAws), "FileSecret", new { token, version = "1.0" }, Request.Scheme);
             apiResult.ErrorMessage = string.IsNullOrWhiteSpace(token) ? $"Failed to upload {file.FileName}." : string.Empty;
         }
         catch (Exception ex)
         {
             apiResult.ErrorMessage = ex.Message;
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to upload file to AWS.");
         }
 
         return Ok(apiResult);
@@ -108,12 +114,21 @@ public class FileSecretController : ControllerBase
                 apiResult.ErrorMessage = $"Failed to download file with token: {token}";
                 return Ok(apiResult);
             }
-            return File(result.FileStream, result.ContentType);
+
+            if (result.Secret.DeleteAfterDownload)
+            {
+                HttpContext.Response.OnCompleted(async () =>
+                {
+                    await UpdateStatusToRemoveAsync(result);
+                });
+            }
+
+            return File(result.FileStream, result.Secret.ContentType);
         }
         catch (Exception ex)
         {
             apiResult.ErrorMessage = ex.Message;
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to download local file.");
         }
         return Ok(apiResult);
     }
@@ -133,12 +148,12 @@ public class FileSecretController : ControllerBase
                 apiResult.ErrorMessage = $"Failed to download file with token: {token}";
                 return Ok(apiResult);
             }
-            return File(result.FileStream, result.ContentType);
+            return File(result.FileStream, result.Secret.ContentType);
         }
         catch (Exception ex)
         {
             apiResult.ErrorMessage = ex.Message;
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to download aws file.");
         }
         return Ok(apiResult);
     }
@@ -154,4 +169,32 @@ public class FileSecretController : ControllerBase
 
         return userId;
     }
+
+    private async Task UpdateStatusToRemoveAsync(FileDownloadResult result)
+    {
+        try
+        {
+            using var scope = _rootProvider.CreateScope();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var storageServiceFactory = scope.ServiceProvider.GetRequiredService<IFileStorageServiceFactory>();
+            var secretRepo = unitOfWork.Secret;
+
+
+            var secret = await secretRepo.GetByIdAsync(result.Secret.Id, CancellationToken.None);
+            if (secret is not null)
+            {
+                secret.MarkRemoved();
+                await secretRepo.UpdateAsync(secret.Id, secret, CancellationToken.None);
+                await unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+                var storageService = storageServiceFactory.Create(result.Secret.StorageProvider);
+                await storageService.DeleteFileAsync(Path.Combine("Uploads", result.Secret.StoragePath), CancellationToken.None);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update status or delete file.");
+        }
+    }
+
 }

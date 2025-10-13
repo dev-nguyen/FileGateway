@@ -36,13 +36,13 @@ public class TextSecretController : ControllerBase
         {
             var token = await _mediator.Send(request);
             apiResult.Success = !string.IsNullOrWhiteSpace(token);
-            apiResult.Data = token;
+            apiResult.Data = Url.Action(nameof(Get), "FileSecret", new { token, version = "1.0" }, Request.Scheme); ;
             apiResult.ErrorMessage = string.IsNullOrWhiteSpace(token) ? $"Failed to create content." : string.Empty;
         }
         catch (Exception ex)
         {
             apiResult.ErrorMessage = ex.Message;
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to create secret text.");
         }
 
         return Ok(apiResult);
@@ -60,12 +60,12 @@ public class TextSecretController : ControllerBase
             var content = await _mediator.Send(request);
             apiResult.Success = !string.IsNullOrWhiteSpace(content);
             apiResult.Data = content;
-            apiResult.ErrorMessage = string.IsNullOrWhiteSpace(content) ? $"Failed to create content." : string.Empty;
+            apiResult.ErrorMessage = string.IsNullOrWhiteSpace(content) ? $"Failed to get content." : string.Empty;
         }
         catch (Exception ex)
         {
             apiResult.ErrorMessage = ex.Message;
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to get secret content.");
         }
 
         return Ok(apiResult);

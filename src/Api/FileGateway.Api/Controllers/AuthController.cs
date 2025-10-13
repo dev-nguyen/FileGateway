@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Login failed.");
             apiResult.ErrorMessage = ex.Message;
         }
 
@@ -60,7 +60,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to register user.");
             apiResult.ErrorMessage = ex.Message;
         }
 
@@ -85,7 +85,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message);
+            _logger.LogError(ex, "Failed to update user.");
             apiResult.ErrorMessage = ex.Message;
         }
 

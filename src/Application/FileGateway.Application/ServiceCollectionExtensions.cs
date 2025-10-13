@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IFileSecretService, FileSecretService>();
+
         services.AddScoped<ITextSecretService, TextSecretService>();
         services.AddMediatR(cfg =>
         {
