@@ -11,13 +11,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastru
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{1E77F553-D7B2-4FBA-ACE0-7085F0C70858}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Infrastructure", "src\FileGateway.Infrastructure\FileGateway.Infrastructure\FileGateway.Infrastructure.csproj", "{47114735-BF74-4566-97F3-C3BAEF929D03}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Infrastructure", "src\Infrastructure\FileGateway.Infrastructure\FileGateway.Infrastructure.csproj", "{47114735-BF74-4566-97F3-C3BAEF929D03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Application", "src\FileGateway.Application\FileGateway.Application\FileGateway.Application.csproj", "{B80D7D64-70DC-435B-8504-7EF87DEAE756}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Application", "src\Application\FileGateway.Application\FileGateway.Application.csproj", "{B80D7D64-70DC-435B-8504-7EF87DEAE756}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Domain", "src\FileGateway.Domain\FileGateway.Domain\FileGateway.Domain.csproj", "{5594909F-AE37-4207-968F-CA254418D588}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Domain", "src\Domain\FileGateway.Domain\FileGateway.Domain.csproj", "{5594909F-AE37-4207-968F-CA254418D588}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Api", "src\FileGateway.Api\FileGateway.Api\FileGateway.Api.csproj", "{2F06D61D-0257-45ED-B832-9497DDDD6BE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileGateway.Api", "src\Api\FileGateway.Api\FileGateway.Api.csproj", "{2F06D61D-0257-45ED-B832-9497DDDD6BE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
